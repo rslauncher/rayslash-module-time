@@ -1,0 +1,58 @@
+package rayslash:module@1.0.0;
+
+interface types {
+    record query-context {
+        query: string,
+        max-results: u32,
+        locale: option<string>,
+        settings-json: string,
+    }
+    variant icon { package-path(string), text(string), none }
+    variant action {
+        copy-text(string),
+        open-url(string),
+        open-path(string),
+        show-message(string),
+        notify(tuple<string, string>),
+        run-approved-command(list<string>),
+        schedule-notification(tuple<u64, string, string>),
+        schedule-command(tuple<u64, list<string>>),
+        none,
+    }
+    record result-item {
+        id: string,
+        title: string,
+        subtitle: string,
+        icon: icon,
+        score: option<u32>,
+        action: action,
+    }
+    record query-response { results: list<result-item>, exclusive: bool }
+    variant module-error { invalid-query(string), unavailable(string), internal(string) }
+}
+
+interface host {
+    use types.{module-error};
+    record http-request {
+        method: string,
+        url: string,
+        headers: list<tuple<string, string>>,
+        body: list<u8>,
+    }
+    record http-response {
+        status: u16,
+        headers: list<tuple<string, string>>,
+        body: list<u8>,
+    }
+    request: func(request: http-request) -> result<http-response, module-error>;
+    cache-get: func(key: string) -> result<option<list<u8>>, module-error>;
+    cache-put: func(key: string, value: list<u8>) -> result<_, module-error>;
+    unix-time: func() -> u64;
+}
+
+interface provider {
+    use types.{module-error, query-context, query-response};
+    query: func(context: query-context) -> result<query-response, module-error>;
+}
+
+world module { import host; export provider; }

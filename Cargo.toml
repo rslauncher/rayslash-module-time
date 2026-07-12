@@ -1,0 +1,24 @@
+[package]
+name = "rayslash-module-time"
+version = "1.0.0"
+edition = "2024"
+license = "MIT"
+repository = "https://github.com/rslauncher/rayslash-module-time"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+chrono-tz = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+urlencoding = "2.1"
+wit-bindgen-rt = { version = "0.44.0", features = ["bitflags"] }
+
+[package.metadata.component]
+package = "rayslash:time"
+
+[package.metadata.component.target]
+path = "wit"
+world = "module"

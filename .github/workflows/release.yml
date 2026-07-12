@@ -1,0 +1,31 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+permissions: { contents: write }
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.92.0
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo install cargo-component --locked --version 0.21.1
+      - run: cargo component build --release --locked --target wasm32-unknown-unknown
+      - uses: actions/checkout@v4
+        with:
+          repository: rslauncher/rayslash-module-sdk
+          ref: 32cd857aabeb0d45479c9bf4101315cb6f5705c6
+          path: sdk
+      - name: Package
+        run: |
+          mkdir dist
+          cp module.toml README.md LICENSE icon.svg dist/
+          cp target/wasm32-unknown-unknown/release/rayslash_module_time.wasm dist/module.wasm
+          cargo run --manifest-path sdk/Cargo.toml -p rayslash-module-tool --locked -- package dist --official
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            rayslash.time-*.tar.zst
+            rayslash.time-*.sha256

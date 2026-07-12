@@ -1,0 +1,23 @@
+id = "rayslash.time"
+name = "Time"
+description = "Show the current time in cities and time zones worldwide."
+author = "rayslash"
+version = "1.0.0"
+api_version = "^1.0"
+license = "MIT"
+source = "https://github.com/rslauncher/rayslash-module-time"
+icon = "icon.svg"
+kind = "wasm"
+
+[permissions]
+network = ["https://geocoding-api.open-meteo.com"]
+cache = false
+clipboard = false
+notifications = false
+commands = false
+
+[[providers]]
+id = "time"
+name = "Time"
+description = "Show the current time in another location."
+triggers = ["time in"]
