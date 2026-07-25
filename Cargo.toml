@@ -1,6 +1,6 @@
 [package]
 name = "rayslash-module-time"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 license = "MIT"
 repository = "https://github.com/rslauncher/rayslash-module-time"
@@ -22,3 +22,10 @@ package = "rayslash:time"
 [package.metadata.component.target]
 path = "wit"
 world = "module"
+
+[profile.release]
+opt-level = "s"
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"

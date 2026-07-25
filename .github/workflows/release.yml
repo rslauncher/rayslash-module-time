@@ -21,7 +21,7 @@ jobs:
       - name: Package
         run: |
           mkdir dist
-          cp module.toml README.md LICENSE icon.svg dist/
+          cp module.toml README.md LICENSE THIRD_PARTY_LICENSES.md icon.svg dist/
           cp target/wasm32-unknown-unknown/release/rayslash_module_time.wasm dist/module.wasm
           cargo run --manifest-path sdk/Cargo.toml -p rayslash-module-tool --locked -- package dist --official
       - uses: softprops/action-gh-release@v2
