@@ -2,7 +2,7 @@ id = "rayslash.time"
 name = "Time"
 description = "Show the current time in cities and time zones worldwide."
 author = "rayslash"
-version = "1.0.1"
+version = "1.0.2"
 api_version = "^1.0"
 license = "MIT"
 source = "https://github.com/rslauncher/rayslash-module-time"
@@ -11,7 +11,7 @@ kind = "wasm"
 
 [permissions]
 network = ["https://geocoding-api.open-meteo.com"]
-cache = false
+cache = true
 clipboard = false
 notifications = false
 commands = false
