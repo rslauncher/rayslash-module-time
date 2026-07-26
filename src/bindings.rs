@@ -1605,9 +1605,7 @@ macro_rules! __export_module_impl {
 #[doc(inline)]
 pub(crate) use __export_module_impl as export;
 #[cfg(target_arch = "wasm32")]
-#[unsafe(
-    link_section = "component-type:wit-bindgen:0.41.0:rayslash:module@1.0.0:module:encoded world"
-)]
+#[unsafe(link_section = "component-type:wit-bindgen:0.41.0:rayslash:module@1.0.0:module:encoded world")]
 #[doc(hidden)]
 #[allow(clippy::octal_escapes)]
 pub static __WIT_BINDGEN_COMPONENT_TYPE: [u8; 1137] = *b"\
