@@ -97,6 +97,9 @@ fn parse(query: &str) -> Option<&str> {
 
 fn find_places(query: &str) -> Result<Vec<Place>, String> {
     let normalized = query.trim().to_lowercase();
+    if let Some(places) = common_places(&normalized) {
+        return Ok(places);
+    }
     let key = place_cache_key(&normalized);
     let now = host::unix_time();
     let cached = host::cache_get(&key)
@@ -124,6 +127,106 @@ fn find_places(query: &str) -> Result<Vec<Place>, String> {
         }
         Err(error) => cached.map(|cached| cached.places).ok_or(error),
     }
+}
+
+fn common_places(query: &str) -> Option<Vec<Place>> {
+    let normalized = normalize_name(query);
+    let city = match normalized.as_str() {
+        "amsterdam" => ("Amsterdam", "Netherlands", "Europe/Amsterdam"),
+        "athens" => ("Athens", "Greece", "Europe/Athens"),
+        "auckland" => ("Auckland", "New Zealand", "Pacific/Auckland"),
+        "bangkok" => ("Bangkok", "Thailand", "Asia/Bangkok"),
+        "beijing" => ("Beijing", "China", "Asia/Shanghai"),
+        "berlin" => ("Berlin", "Germany", "Europe/Berlin"),
+        "bogota" => ("Bogotá", "Colombia", "America/Bogota"),
+        "buenosaires" => (
+            "Buenos Aires",
+            "Argentina",
+            "America/Argentina/Buenos_Aires",
+        ),
+        "cairo" => ("Cairo", "Egypt", "Africa/Cairo"),
+        "capetown" => ("Cape Town", "South Africa", "Africa/Johannesburg"),
+        "chicago" => ("Chicago", "United States", "America/Chicago"),
+        "delhi" | "newdelhi" => ("New Delhi", "India", "Asia/Kolkata"),
+        "denver" => ("Denver", "United States", "America/Denver"),
+        "dubai" => ("Dubai", "United Arab Emirates", "Asia/Dubai"),
+        "dublin" => ("Dublin", "Ireland", "Europe/Dublin"),
+        "helsinki" => ("Helsinki", "Finland", "Europe/Helsinki"),
+        "hongkong" => ("Hong Kong", "Hong Kong", "Asia/Hong_Kong"),
+        "honolulu" => ("Honolulu", "United States", "Pacific/Honolulu"),
+        "istanbul" => ("Istanbul", "Türkiye", "Europe/Istanbul"),
+        "jakarta" => ("Jakarta", "Indonesia", "Asia/Jakarta"),
+        "johannesburg" => ("Johannesburg", "South Africa", "Africa/Johannesburg"),
+        "karachi" => ("Karachi", "Pakistan", "Asia/Karachi"),
+        "lagos" => ("Lagos", "Nigeria", "Africa/Lagos"),
+        "lima" => ("Lima", "Peru", "America/Lima"),
+        "lisbon" => ("Lisbon", "Portugal", "Europe/Lisbon"),
+        "london" => ("London", "United Kingdom", "Europe/London"),
+        "losangeles" | "la" => ("Los Angeles", "United States", "America/Los_Angeles"),
+        "madrid" => ("Madrid", "Spain", "Europe/Madrid"),
+        "manila" => ("Manila", "Philippines", "Asia/Manila"),
+        "melbourne" => ("Melbourne", "Australia", "Australia/Melbourne"),
+        "mexicocity" => ("Mexico City", "Mexico", "America/Mexico_City"),
+        "moscow" => ("Moscow", "Russia", "Europe/Moscow"),
+        "mumbai" => ("Mumbai", "India", "Asia/Kolkata"),
+        "nairobi" => ("Nairobi", "Kenya", "Africa/Nairobi"),
+        "newyork" | "newyorkcity" | "nyc" => ("New York", "United States", "America/New_York"),
+        "oslo" => ("Oslo", "Norway", "Europe/Oslo"),
+        "paris" => ("Paris", "France", "Europe/Paris"),
+        "reykjavik" => ("Reykjavík", "Iceland", "Atlantic/Reykjavik"),
+        "riodejaneiro" | "rio" => ("Rio de Janeiro", "Brazil", "America/Sao_Paulo"),
+        "rome" => ("Rome", "Italy", "Europe/Rome"),
+        "sanfrancisco" | "sf" => ("San Francisco", "United States", "America/Los_Angeles"),
+        "santiago" => ("Santiago", "Chile", "America/Santiago"),
+        "saopaulo" | "sãopaulo" => ("São Paulo", "Brazil", "America/Sao_Paulo"),
+        "seoul" => ("Seoul", "South Korea", "Asia/Seoul"),
+        "shanghai" => ("Shanghai", "China", "Asia/Shanghai"),
+        "singapore" => ("Singapore", "Singapore", "Asia/Singapore"),
+        "stockholm" => ("Stockholm", "Sweden", "Europe/Stockholm"),
+        "sydney" => ("Sydney", "Australia", "Australia/Sydney"),
+        "taipei" => ("Taipei", "Taiwan", "Asia/Taipei"),
+        "tehran" => ("Tehran", "Iran", "Asia/Tehran"),
+        "tokyo" => ("Tokyo", "Japan", "Asia/Tokyo"),
+        "toronto" => ("Toronto", "Canada", "America/Toronto"),
+        "vancouver" => ("Vancouver", "Canada", "America/Vancouver"),
+        "vienna" => ("Vienna", "Austria", "Europe/Vienna"),
+        "warsaw" => ("Warsaw", "Poland", "Europe/Warsaw"),
+        "washington" | "washingtondc" => ("Washington, D.C.", "United States", "America/New_York"),
+        "zurich" => ("Zürich", "Switzerland", "Europe/Zurich"),
+        _ => return common_country(&normalized),
+    };
+    Some(vec![Place {
+        name: city.0.to_owned(),
+        country: city.1.to_owned(),
+        timezone: city.2.to_owned(),
+    }])
+}
+
+fn common_country(normalized: &str) -> Option<Vec<Place>> {
+    let (name, code) = match normalized {
+        "argentina" => ("Argentina", "AR"),
+        "australia" => ("Australia", "AU"),
+        "brazil" => ("Brazil", "BR"),
+        "canada" => ("Canada", "CA"),
+        "china" => ("China", "CN"),
+        "france" => ("France", "FR"),
+        "germany" => ("Germany", "DE"),
+        "india" => ("India", "IN"),
+        "indonesia" => ("Indonesia", "ID"),
+        "italy" => ("Italy", "IT"),
+        "japan" => ("Japan", "JP"),
+        "mexico" => ("Mexico", "MX"),
+        "newzealand" => ("New Zealand", "NZ"),
+        "russia" => ("Russia", "RU"),
+        "southafrica" => ("South Africa", "ZA"),
+        "southkorea" | "korea" => ("South Korea", "KR"),
+        "spain" => ("Spain", "ES"),
+        "unitedkingdom" | "uk" => ("United Kingdom", "GB"),
+        "unitedstates" | "unitedstatesofamerica" | "usa" | "us" => ("United States", "US"),
+        _ => return None,
+    };
+    let now = DateTime::<Utc>::from_timestamp(host::unix_time() as i64, 0)?;
+    Some(country_places(name, code, now))
 }
 
 fn request_places(query: &str) -> Result<Vec<Place>, String> {
@@ -401,7 +504,9 @@ bindings::export!(Component with_types_in bindings);
 mod tests {
     use chrono::{TimeZone, Utc};
 
-    use super::{country_places, decode_geocoding_response, parse, resolve_api_places};
+    use super::{
+        common_places, country_places, decode_geocoding_response, parse, resolve_api_places,
+    };
 
     #[test]
     fn parses_location() {
@@ -424,6 +529,13 @@ mod tests {
 
         assert_eq!(response.results.len(), 1);
         assert!(response.results[0].timezone.is_none());
+    }
+
+    #[test]
+    fn common_city_index_resolves_without_the_network() {
+        let places = common_places("São Paulo").expect("common city should resolve");
+        assert_eq!(places.len(), 1);
+        assert_eq!(places[0].timezone, "America/Sao_Paulo");
     }
 
     #[test]
